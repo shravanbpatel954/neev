@@ -29,7 +29,7 @@ export default function Sync() {
     while (sendable().length && tries < 60) {
       tries++; const batch = sendable().slice(0, 30), dice = Math.random() * 100;
       if (dice < bad * 0.55) { T.lost++; say(`Request ${tries}: lost on the way. Will retry.`, 'w'); await wait(160); setTot({ ...T }); continue; }
-      let r; try { r = await upload(batch); } catch (e) { say('Server unreachable: ' + e.message, 'w'); break; }
+      let r; try { r = await upload(batch, cls.value.checkId); } catch (e) { say('Server unreachable: ' + e.message, 'w'); break; }
       T.accepted += r.accepted; T.duplicates += r.duplicates;
       if (dice < bad) { T.lost++; say(`Request ${tries}: saved, but the reply was lost. Phone will resend.`, 'w'); }
       else { const ack = new Set(r.acked); sent.value = [...sent.value, ...outbox.value.filter((e) => ack.has(e.eventId))]; outbox.value = outbox.value.filter((e) => !ack.has(e.eventId)); say(`Request ${tries}: ${r.accepted} new, ${r.duplicates} duplicates ignored`, 'g'); }
@@ -37,9 +37,9 @@ export default function Sync() {
     }
     T.held = outbox.value.filter((e) => CONSENT_MISSING.has(e.learner)).length; if (T.held) say(`${T.held} events held on the phone: no parental consent`, 'w');
     setTot({ ...T }); setBusy(false);
-    if (!sendable().length) { try { const r = await serverReplay('6B'); let n = 0, same = 0; for (const k of cls.value.kids) if (r[k.id] && k.answers.length) { n++; const d = diagnose(k.answers); if (Object.keys(d.post).every((h) => Math.abs(d.post[h] - r[k.id].post[h]) < 1e-9)) same++; } setCmp({ n, same }); } catch { /* ignore */ } }
+    if (!sendable().length) { try { const r = await serverReplay('6B', cls.value.checkId); let n = 0, same = 0; for (const k of cls.value.kids) if (r[k.id] && k.answers.length) { n++; const d = diagnose(k.answers); if (Object.keys(d.post).every((h) => Math.abs(d.post[h] - r[k.id].post[h]) < 1e-9)) same++; } setCmp({ n, same }); } catch { /* ignore */ } }
   };
-  const resend = async () => { if (airplane.value || !ok.length) return; const r = await upload(ok); setTot({ ...tot, duplicates: tot.duplicates + r.duplicates, accepted: tot.accepted + r.accepted }); say(`Sent everything again: ${r.accepted} new, ${r.duplicates} duplicates ignored`, 'g'); };
+  const resend = async () => { if (airplane.value || !ok.length) return; const r = await upload(ok, cls.value.checkId); setTot({ ...tot, duplicates: tot.duplicates + r.duplicates, accepted: tot.accepted + r.accepted }); say(`Sent everything again: ${r.accepted} new, ${r.duplicates} duplicates ignored`, 'g'); };
   return (
     <div class="page">
       <Head eyebrow="Offline sync" title="Append events, never overwrite">{size && total ? `This check, with every probe, is ${total} answers: ${size.raw} KB raw${size.zip ? `, ${size.zip} KB compressed` : ''}. ` : ''}It can go over 2G, or with no signal at all.</Head>

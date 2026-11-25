@@ -7,7 +7,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { createServices, memoryStore } from './services.js';
+import { createServices, memoryStore, validCheck } from './services.js';
 import { CHECK, ITEM, PROBES, validEvent } from '../core/index.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -69,6 +69,7 @@ export function createGateway(store = fileStore()) {
     const send = (code, o) => { res.writeHead(code, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(o)); };
     const p = url.pathname.split('/').filter(Boolean).slice(1), m = req.method;
     if (limited(clientIp(req))) return send(429, { error: 'rate limited' });
+    const check = validCheck(url.searchParams.get('check')) ? url.searchParams.get('check') : undefined;
     const need = (...roles) => { const r = roleOf(req); if (r && roles.includes(r)) return r; send(r ? 403 : 401, { error: r ? 'role not allowed' : 'sign in first' }); return null; };
 
     if (p[0] === 'health') { findRoute(); await new Promise((r) => setTimeout(r, 30)); } 
@@ -76,10 +77,10 @@ export function createGateway(store = fileStore()) {
     if (p[0] === 'auth' && m === 'POST') { const { role } = await body(req); if (!['teacher', 'leader', 'content'].includes(role)) return send(400, { error: 'unknown role' }); log(role, 'sign-in'); return send(200, { token: issue(role), expiresIn: 900 }); }
     if (p[0] === 'engine' && p[1] === 'golden') return send(200, svc.diagnosis.golden());
     if (p[0] === 'packs') return send(200, svc.content.pack());
-    if (p[0] === 'events' && m === 'POST') { const r = need('teacher'); if (!r) return; const b = await body(req); if (!Array.isArray(b.events) || b.events.length > 2000) return send(400, { error: 'events[] expected' }); if (svc.sync.count() + b.events.length > MAX_EVENTS) return send(507, { error: 'demo log is full' }); const out = svc.sync.upload(b.events); log(r, `events +${out.accepted} dup ${out.duplicates} held ${out.held}`); return send(200, { ...out, total: svc.sync.count() }); }
-    if (p[0] === 'sections' && p[2] === 'board') { if (!need('teacher', 'leader')) return; return send(200, svc.insights.board(p[1])); }
+    if (p[0] === 'events' && m === 'POST') { const r = need('teacher'); if (!r) return; const b = await body(req); if (!Array.isArray(b.events) || b.events.length > 2000) return send(400, { error: 'events[] expected' }); if (b.check !== undefined && !validCheck(b.check)) return send(400, { error: 'bad check id' }); if (svc.sync.count() + b.events.length > MAX_EVENTS) return send(507, { error: 'demo log is full' }); const out = svc.sync.upload(b.events, b.check); log(r, `events +${out.accepted} dup ${out.duplicates} held ${out.held}`); return send(200, { ...out, total: svc.sync.count() }); }
+    if (p[0] === 'sections' && p[2] === 'board') { if (!need('teacher', 'leader')) return; return send(200, svc.insights.board(p[1], check)); }
     if (p[0] === 'sections' && p[2] === 'roster') { if (!need('teacher')) return; return send(200, svc.erp.roster(p[1])); }
-    if (p[0] === 'sections' && p[2] === 'replay') { if (!need('teacher')) return; return send(200, Object.fromEntries(Object.entries(svc.diagnosis.replay(p[1])).map(([k, d]) => [k, { label: d.label, post: d.post }]))); }
+    if (p[0] === 'sections' && p[2] === 'replay') { if (!need('teacher')) return; return send(200, Object.fromEntries(Object.entries(svc.diagnosis.replay(p[1], check)).map(([k, d]) => [k, { label: d.label, post: d.post }]))); }
     if (p[0] === 'content' && p[1] === 'check' && m === 'POST') { if (!need('content', 'teacher')) return; return send(200, svc.content.check((await body(req)).p)); }
     if (p[0] === 'audit') { if (!need('leader')) return; return send(200, audit.slice(-50)); }
 

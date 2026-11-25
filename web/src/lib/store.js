@@ -1,5 +1,5 @@
 import { computed, effect, signal } from '@preact/signals';
-import { CHECK, diagnose, eig, makeClass, posterior, rankProbes, rng, virtualAnswer, HYP, bottlenecks, makeEvent } from '../../../core/index.js';
+import { CHECK, uuidv7, diagnose, eig, makeClass, posterior, rankProbes, rng, virtualAnswer, HYP, bottlenecks, makeEvent } from '../../../core/index.js';
 
 // ---------- small persisted preferences ----------
 const load = (k, d) => { try { return JSON.parse(localStorage.getItem('neev:' + k)) ?? d; } catch { return d; } };
@@ -34,7 +34,7 @@ const SEED = 21;
 export function freshClass() {
   const hidden = makeClass(SEED);
   return {
-    phase: 'start', qi: 0, asked: [], probeId: null, approved: false, day: 0, rechecks: {}, scanFor: 'check', real: false,
+    checkId: uuidv7(), phase: 'start', qi: 0, asked: [], probeId: null, approved: false, day: 0, rechecks: {}, scanFor: 'check', real: false,
     kids: NAMES.map((name, i) => ({ i, id: `L-6B-${String(i + 1).padStart(2, '0')}`, name, hidden: hidden[i], present: i !== 8 && i !== 29, answers: [], moved: null })),
   };
 }

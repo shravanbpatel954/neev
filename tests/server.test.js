@@ -40,3 +40,14 @@ test('live room: join, answer once, host only controls', async () => {
   assert.equal((await call(`/rooms/${code}/host`, { body: { host, item: 'FR-ADD-10' } })).status, 200);
 });
 test('path traversal is refused', async () => { const r = await fetch(base.replace('/v1', '') + '/..%2f..%2fpackage.json'); assert.ok(!(await r.text()).includes('"neev"')); });
+test('two visitors with the same sample learners never mix', async () => {
+  const token = await login('teacher'), run = async (rule) => {
+    const check = crypto.randomUUID(), answers = CHECK.map((item) => ({ item, option: item.predict[rule], side: 'sure' }));
+    await call('/events', { token, body: { check, events: answers.map((a) => makeEvent('L-6B-07', a)) } });
+    return { answers, got: (await call(`/sections/6B/replay?check=${check}`, { token })).json['L-6B-07'] };
+  };
+  for (const r of [await run('CORRECT'), await run('ADDITIVE_EQUIV'), await run('TOPS_AND_BOTTOMS')]) {
+    const d = diagnose(r.answers); for (const h in d.post) assert.ok(Math.abs(r.got.post[h] - d.post[h]) < 1e-12);
+  }
+  assert.equal((await call('/events', { token, body: { check: '../x', events: [] } })).status, 400);
+});

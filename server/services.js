@@ -5,19 +5,23 @@ import { ALL_ITEMS, ENGINE, HYP, PACK, bottlenecks, ingest, makeAdd, replay, run
 export const CONSENT_MISSING = new Set(['L-6B-17', 'L-6B-31']); // ERP says: no verifiable parental consent yet
 export const consentOk = (l) => !CONSENT_MISSING.has(l);
 
+/** A check id keeps one class check apart from every other, even when sample learners share pseudonyms. */
+export const validCheck = (c) => typeof c === 'string' && /^[0-9a-f-]{36}$/.test(c);
+
 export function createServices(store) {
+  const only = (section, check) => store.all().filter((e) => e.learner.startsWith(`L-${section}-`) && (!check || e.check === check));
   return {
     sync: {
-      upload: (events) => ingest(store, events, consentOk),
+      upload: (events, check) => ingest({ has: store.has, add: (e) => store.add(check ? { ...e, check } : e) }, events, consentOk),
       count: () => store.size(),
     },
     diagnosis: {
-      replay: (section) => replay(store.all().filter((e) => e.learner.startsWith(`L-${section}-`))),
+      replay: (section, check) => replay(only(section, check)),
       golden: () => ({ engine: ENGINE, ...runGolden() }),
     },
     insights: {
-      board(section) {
-        const r = replay(store.all().filter((e) => e.learner.startsWith(`L-${section}-`))), d = Object.values(r);
+      board(section, check) {
+        const r = replay(only(section, check)), d = Object.values(r);
         return { section, learners: d.length, settled: d.filter((x) => x.settled).length, bottlenecks: bottlenecks(d).map(({ who, ...b }) => b) };
       },
     },

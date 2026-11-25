@@ -28,13 +28,13 @@ export async function call(path, { role, body } = {}) {
   const j = await r.json(); if (!r.ok) throw Object.assign(new Error(j.error), { status: r.status });
   return j;
 }
-export async function upload(events) {
-  if (server.value === 'live') return call('/events', { role: 'teacher', body: { events } });
+export async function upload(events, check) {
+  if (server.value === 'live') return call('/events', { role: 'teacher', body: { events, check } });
   await new Promise((r) => setTimeout(r, 250));
-  return { ...local.sync.upload(events), total: local.sync.count() };
+  return { ...local.sync.upload(events, check), total: local.sync.count() };
 }
-export async function serverReplay(section) {
-  if (server.value === 'live') return call(`/sections/${section}/replay`, { role: 'teacher' });
-  return local.diagnosis.replay(section);
+export async function serverReplay(section, check) {
+  if (server.value === 'live') return call(`/sections/${section}/replay?check=${check}`, { role: 'teacher' });
+  return local.diagnosis.replay(section, check);
 }
 export async function serverGolden() { return server.value === 'live' ? call('/engine/golden') : local.diagnosis.golden(); }

@@ -4,6 +4,8 @@
 
 Neev traces a wrong answer back to the loose concept "brick" under it, proposes a ten-minute fix for the teacher, gives the child a short repair game, and rechecks on Day 3 and Day 10.
 
+**Live:** https://neev-e3mt.onrender.com (free hosting: the first visit after a quiet spell can take about a minute)
+
 ## Run it
 
 Needs Node 20 or later. The built site is already in `dist/`, so nothing has to be installed.
