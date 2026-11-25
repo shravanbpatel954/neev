@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Neev · Find the missing foundation</title>
+  <meta name="description" content="Neev traces a wrong answer back to the hidden gap, tells the teacher what to do in ten minutes, then proves the gap is closed.">
+  <meta name="theme-color" content="#0B2B2A">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <style>
+    html,body{margin:0;height:100%;background:#0B2B2A;color:#F1F5F4}
+    #boot{position:fixed;inset:0;display:grid;place-content:center;justify-items:center;gap:6px;font:700 15px system-ui,sans-serif;color:#6EDFB3}
+    #boot i{display:block;width:120px;height:20px;border-radius:5px;background:#17463F;animation:b .5s cubic-bezier(.3,1.5,.6,1) both}
+    #boot i:nth-child(4){animation-delay:0s;background:#F2B035;width:150px}#boot i:nth-child(3){animation-delay:.14s;margin-left:10px}#boot i:nth-child(2){animation-delay:.28s;margin-right:12px}#boot i:nth-child(1){animation-delay:.42s;background:#6EDFB3;width:100px}
+    @keyframes b{from{transform:translateY(-60px);opacity:0}}
+    @media (prefers-reduced-motion:reduce){#boot i{animation:none}}
+  </style>
+</head>
+<body>
+  <div id="app"><div id="boot" role="status" aria-label="Loading Neev"><i></i><i></i><i></i><i></i></div></div>
+  <noscript style="position:fixed;inset:0;display:grid;place-content:center">Neev needs JavaScript to run its diagnostic engine.</noscript>
+  <script type="module" src="./src/main.jsx"></script>
+</body>
+</html>
